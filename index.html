@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>まるちゃんハウス</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        :root { --wall-color: #fce4ec; --floor-color: #f06292; }
+        body { margin: 0; font-family: sans-serif; overflow: hidden; background: #333; touch-action: manipulation; }
+        #game-screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        #room { flex-grow: 1; position: relative; background: linear-gradient(var(--wall-color) 50%, var(--floor-color) 50%); overflow: hidden; }
+        .pet { position: absolute; width: 100px; height: 100px; cursor: pointer; z-index: 10; transition: left 3s linear, top 3s linear;}
+/* CSSの .pet img 部分を修正 */
+.pet img {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    /* transitionをここから削除、またはtransformを除外する */
+    transition: transform 0s; /* 反転(transform)だけは一瞬で反映させる */
+}
+
+/* 反転用のクラスをより確実に定義 */
+.flip-img {
+    transform: scaleX(-1);
+}
+        #ui-layer { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; z-index: 50; width: 95%; max-width: 500px; }
+        button { padding: 12px 5px; cursor: pointer; border-radius: 12px; border: none; background: white; box-shadow: 0 4px 0 #bbb; font-weight: bold; font-size: 11px; }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 20px; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; text-align: center; max-height: 85vh; overflow-y: auto; }
+        .modal-open { display: block !important; }
+        .preview-box { position: relative; width: 100px; height: 100px; margin: 10px auto; background: #eee; border-radius: 50%; border: 2px solid #ccc; overflow: hidden; }
+        .preview-box img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #qrcode-output { margin-top: 10px; display: flex; justify-content: center; min-height: 120px; background: #f9f9f9; align-items: center; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="game-screen">
+    <div id="room" onclick="if(event.target === this) closeAllModals()"></div>
+    <div id="ui-layer">
+        <button onclick="openBox()">ボックス</button>
+        <button onclick="openCreateMenu()">デザイン</button>
+        <button onclick="openModal('scan-modal')">購入(QR)</button>
+        <button onclick="openGachaMenu('parts')">パーツガチャ</button>
+        <button onclick="openGachaMenu('acc')">アクセガチャ</button>
+        <button onclick="openShop()">ショップ</button>
+        <button onclick="changeRoomColor()">部屋設定</button>
+    </div>
+</div>
+
+<div id="detail-modal" class="modal">
+    <h2 id="det-name"></h2>
+    <p>満腹度: <span id="det-hunger"></span>% / キモチ: <span id="det-feeling"></span></p>
+    <div id="det-tags" style="color:#666; font-size:0.8em;"></div>
+    <hr>
+    <button onclick="openFeedSelect()">餌やり</button>
+    <button onclick="openEquipMenu()">きがえ</button>
+    <button onclick="sendFeeling()">キモチ送信</button>
+    <button onclick="closeAllModals()">とじる</button>
+</div>
+
+<div id="gacha-modal" class="modal">
+    <h3 id="gacha-title">ガチャ</h3>
+    <p>所持: <span id="money-display"></span>枚 / ダブリ: <span id="dust-display"></span>pt</p>
+    <div id="gacha-result-area" style="font-weight:bold; color:#f06292; margin:10px 0; min-height:1.2em;"></div>
+    <button id="gacha-exec-btn">ガチャを回す (150枚)</button>
+    <button onclick="closeAllModals()">戻る</button>
+</div>
+
+<div id="shop-modal" class="modal">
+    <h3>エサショップ</h3>
+    <p>所持金: <span id="shop-money"></span>枚</p>
+    <div id="shop-list"></div>
+    <button onclick="closeAllModals()">閉じる</button>
+</div>
+
+<div id="feed-select-modal" class="modal">
+    <h3>どれをあげる？</h3>
+    <div id="food-inventory-list"></div>
+    <button onclick="openModal('detail-modal')">戻る</button>
+</div>
+
+<div id="equip-modal" class="modal">
+    <h3>アクセサリ装備</h3>
+    <div id="equip-list"></div>
+    <button onclick="openModal('detail-modal')">戻る</button>
+</div>
+
+<div id="create-modal" class="modal">
+    <h3>まるちゃん生成</h3>
+    <div class="preview-box">
+        <img id="p-body-img" src="">
+        <img id="p-eye-img" src="">
+        <img id="p-mouth-img" src="">
+    </div>
+    <input type="text" id="c-name" placeholder="なまえ" maxlength="8"><br>
+    体色: <select id="c-sel-body" onchange="updatePreview()"></select><br>
+    目: <select id="c-sel-eye" onchange="updatePreview()"></select><br>
+    口: <select id="c-sel-mouth" onchange="updatePreview()"></select><br>
+    タグ1: <input type="text" id="c-t1" placeholder="げんき" size="6">
+    タグ2: <input type="text" id="c-t2" placeholder="くいしんぼう" size="6"><br>
+    難度: <select id="c-diff"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+    好物: <select id="c-fav"><option value="りんご">りんご</option><option value="パン">パン</option></select><br>
+    <hr>
+    <button onclick="generateQR()">QR発行(販売)</button>
+    <div id="qrcode-output"></div>
+    <button onclick="closeAllModals()">閉じる</button>
+</div>
+
+<div id="box-modal" class="modal">
+    <h3>ボックス (部屋は3匹まで)</h3>
+    <div id="box-list"></div>
+    <button onclick="closeAllModals()">閉じる</button>
+</div>
+
+<div id="scan-modal" class="modal">
+    <h3>QRコード読み取り</h3>
+    <input type="file" accept="image/*" onchange="scanFile(this)">
+    
+    <div id="buy-area" style="display:none; border:2px dashed #ff99aa; padding:15px; border-radius:15px; background:#fff5f7; margin-top:15px;">
+    <h3 style="margin:0 0 10px 0; color:#d63384;">あたらしい まるちゃん！</h3>
+    
+    <div id="buy-preview" style="width:120px; height:120px; margin: 0 auto 10px; position: relative; background:#fff; border-radius:50%; border:2px solid #ffccd5; overflow:hidden;">
+        </div>
+
+    <div id="buy-info" style="font-weight:bold; margin-bottom:10px; color:#555;"></div>
+    
+    <div style="display:flex; gap:10px;">
+        <button id="buy-btn" style="flex:1; background:#ff4785; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">購入する</button>
+        <button onclick="document.getElementById('buy-area').style.display='none'" style="flex:1; background:#ccc; border:none; padding:10px; border-radius:8px; cursor:pointer;">やめる</button>
+    </div>
+</div>
+    
+    <button onclick="closeAllModals()" style="margin-top:10px;">戻る</button>
+</div>
+
+<script>
+/** --- データ定義 --- **/
+const MASTER_DATA = {
+    bodies: [
+        {id:'b1', name:'白まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_b.png'}, // ここをファイル名に
+        {id:'b2', name:'桃まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/pink_b.png'},
+        {id:'b3', name:'黒まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_b.png'},
+        {id:'b4', name:'青まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bule_b.png'},
+{id:'b5', name:'緑まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_b.png'},
+{id:'b6', name:'桃まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_b.png'},
+{id:'b7', name:'赤まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_b.png'}
+    ],
+    eyes: [
+        {id:'e1', name:'ふつうの目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_me.png'},
+        {id:'e2', name:'ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/zitome.png'},
+ {id:'e3', name:'a目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a_me.png'},
+ {id:'e4', name:'黒い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_me.png'},
+ {id:'e5', name:'青い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_me.png'},
+ {id:'e6', name:'緑の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_me.png'},
+ {id:'e7', name:'逆ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/gyaku_jitome_me.png'},
+ {id:'e8', name:'カイトー目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kaitou.png'},
+ {id:'e9', name:'まつ毛つき閉じ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/matuge_tizi.png'},
+  {id:'e10', name:'怒った目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/okoru.png'},
+   {id:'e11', name:'紫の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_me.png'},
+ {id:'e12', name:'赤い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_me.png'},
+ {id:'e13', name:'猫目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/riaru_me.png'},
+ {id:'e14', name:'t目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/t_me.png'},
+ {id:'e15', name:'単眼', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/tangan.png'},
+ {id:'e16', name:'点', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ten.png'},
+ {id:'e17', name:'閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/toziru.png'}
+],
+    mouths: [
+        {id:'m1', name:'にっこり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_kuti.png'},
+ {id:'m2', name:'アヴァ口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ava_kuti.png'},
+ {id:'m3', name:'大きな四角', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/big_sikaku_kuti.png'},
+ {id:'m4', name:'歯を見せる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ha_kuti.png'},
+ {id:'m5', name:'小さな', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kuti_2.png'},
+  {id:'m6', name:'中くらいの', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kuti_3.png'},
+ {id:'m7', name:'n口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/n_kuti.png'},
+ {id:'m8', name:'サザエ口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/sazae.png'},
+ {id:'m9', name:'四角', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/sikaku_kuti.png'},
+ {id:'m10', name:'u口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/u_kuti.png'},
+ {id:'m11', name:'w口開く', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_hiraku.png'},
+ {id:'m12', name:'w口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_kuti.png'},
+ {id:'m13', name:'八重歯閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yaeba.png'}
+],
+    accessories: [
+        {id:'a1', name:'黒リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_ri.png'},
+        {id:'a2', name:'青いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_ban.png'},
+        {id:'a3', name:'青リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_ri.png'},
+        {id:'a4', name:'sfゴーグル', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/goggles.png'},
+        {id:'a5', name:'グレーリボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/grade_r.png'},
+        {id:'a6', name:'緑リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_ri.png'},
+        {id:'a7', name:'葉っぱ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/happa.png'},
+        {id:'a8', name:'ひまわり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/himawari.png'},
+        {id:'a9', name:'歴戦の傷', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kizu.png'},
+        {id:'a10', name:'コケ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/koke.png'},
+        {id:'a11', name:'たれ耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/mimi.png'},
+        {id:'a12', name:'桃色のバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/pink_ban.png'},
+        {id:'a13', name:'紫リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_r.png'},
+        {id:'a14', name:'赤いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_ban.png'},
+        {id:'a15', name:'赤い花', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_hana.png'},
+        {id:'a16', name:'赤リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_ri.png'},
+        {id:'a17', name:'雪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/snow.png'},
+        {id:'a18', name:'黄色いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ban.png'},
+        {id:'a19', name:'黄リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ri.png'},
+    ]
+};
+
+const FOOD_DATA = [
+    { id: 'f1', name: 'リンゴ', price: 15, recovery: 20 },
+    { id: 'f2', name: '高級ステーキ', price: 30, recovery: 80 },
+    { id: 'f3', name: 'まるパン', price: 15, recovery: 30 }
+];
+
+const ALL_PARTS = [...MASTER_DATA.bodies, ...MASTER_DATA.eyes, ...MASTER_DATA.mouths];
+const ALL_ACCESSORIES = MASTER_DATA.accessories;
+
+let userData = {
+    money: 1000, dustPoints: 0, lastLogin: 0, lastSaveTime: Date.now(),
+    inventory: { 
+        bodies:['b1'], eyes:['e1'], mouths:['m1'], 
+        accessories:['a1'], 
+        foods: { 'f1': 3 } 
+    },
+    roomPets: [], boxPets: [],
+    roomConfig: { wall: '#fce4ec', floor: '#f06292' }
+};
+
+let selectedPetId = null;
+
+/** --- 基本機能 --- **/
+function openModal(id) {
+    closeAllModals();
+    document.getElementById(id).classList.add('modal-open');
+}
+function closeAllModals() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('modal-open'));
+}
+
+function save() {
+    const now = Date.now();
+    const lastSave = userData.lastSaveTime || now;
+    const secondsPassed = Math.floor((now - lastSave) / 1000);
+    
+    // 60秒（1分）以上経過していたら計算を実行
+    if (secondsPassed >= 60) {
+        const mins = Math.floor(secondsPassed / 60);
+        calculateProgress(mins);
+        // 計算した分だけ基準時間を更新
+        userData.lastSaveTime += mins * 60000;
+
+        // 常に最新の状態を保存
+    localStorage.setItem('maru_v3_ext', JSON.stringify(userData));
+    
+    // 画面上の所持金表示(money-display)を最新にする
+    const moneyEl = document.getElementById('money-display');
+    if (moneyEl) moneyEl.innerText = userData.money;
+}
+}
+
+function load() {
+    const d = localStorage.getItem('maru_v3_ext');
+    if(d) {
+        userData = JSON.parse(d);
+        // データ補完（追加機能用）
+        if(!userData.inventory.foods) userData.inventory.foods = { 'f1': 3 };
+        if(!userData.inventory.accessories) userData.inventory.accessories = ['a1'];
+        
+        document.documentElement.style.setProperty('--wall-color', userData.roomConfig.wall);
+        document.documentElement.style.setProperty('--floor-color', userData.roomConfig.floor);
+        checkLoginBonus();
+        applyOfflineTime();
+    }
+}
+
+function checkLoginBonus() {
+    const today = new Date().toLocaleDateString();
+    if(userData.lastLogin !== today) {
+        userData.money += 600;
+        userData.lastLogin = today;
+        alert("ログインボーナス！600コイン獲得！");
+        save();
+    }
+}
+
+function applyOfflineTime() {
+    const now = Date.now();
+    const lastSave = userData.lastSaveTime || now;
+    const diffMin = Math.floor((now - lastSave) / 60000);
+    
+    if (diffMin > 0) {
+        calculateProgress(diffMin);
+        userData.lastSaveTime = now; // 放置分を反映完了
+        save();
+    }
+}
+
+/** --- ガチャ機能 --- **/
+function openGachaMenu(type) {
+    document.getElementById('money-display').innerText = userData.money;
+    document.getElementById('dust-display').innerText = userData.dustPoints;
+    document.getElementById('gacha-result-area').innerText = "";
+    
+    const title = document.getElementById('gacha-title');
+    const btn = document.getElementById('gacha-exec-btn');
+
+    if(type === 'parts') {
+        title.innerText = "パーツガチャ (100枚)";
+        btn.onclick = () => playGacha('parts');
+    } else {
+        title.innerText = "アクセガチャ (100枚)";
+        btn.onclick = () => playGacha('acc');
+    }
+    openModal('gacha-modal');
+}
+
+function playGacha(type) {
+    if(userData.money < 100) return alert("コイン不足");
+    userData.money -= 100;
+    
+    const pool = (type === 'parts') ? ALL_PARTS : ALL_ACCESSORIES;
+    const res = pool[Math.floor(Math.random() * pool.length)];
+    let isNew = false;
+
+    if(type === 'parts') {
+        const typeKey = res.id.startsWith('b') ? 'bodies' : res.id.startsWith('e') ? 'eyes' : 'mouths';
+        if(!userData.inventory[typeKey].includes(res.id)) {
+            userData.inventory[typeKey].push(res.id);
+            isNew = true;
+        }
+    } else {
+        if(!userData.inventory.accessories.includes(res.id)) {
+            userData.inventory.accessories.push(res.id);
+            isNew = true;
+        }
+    }
+
+    if(!isNew) {
+        userData.dustPoints++;
+        if(userData.dustPoints >= 5) {
+            userData.dustPoints -= 5;
+            document.getElementById('gacha-result-area').innerText = "ダブリ5回で再抽選！";
+            return playGacha(type);
+        }
+    }
+
+    document.getElementById('gacha-result-area').innerText = (isNew ? "✨NEW✨ " : "（ダブリ）") + res.name;
+    document.getElementById('money-display').innerText = userData.money;
+    document.getElementById('dust-display').innerText = userData.dustPoints;
+    save();
+}
+
+/** --- ショップ機能 --- **/
+function openShop() {
+    document.getElementById('shop-money').innerText = userData.money;
+    const list = document.getElementById('shop-list');
+    list.innerHTML = FOOD_DATA.map(f => `
+        <div class="list-item">
+            <span>${f.name} (${f.price}枚)</span>
+            <button onclick="buyFood('${f.id}')">購入</button>
+        </div>
+    `).join('');
+    openModal('shop-modal');
+}
+
+function buyFood(id) {
+    const food = FOOD_DATA.find(f => f.id === id);
+    if(userData.money < food.price) return alert("コイン不足");
+    userData.money -= food.price;
+    userData.inventory.foods[id] = (userData.inventory.foods[id] || 0) + 1;
+    document.getElementById('shop-money').innerText = userData.money;
+    save();
+}
+
+/** --- デザイン設定 --- **/
+function openCreateMenu() {
+    const fillSelect = (id, key) => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = userData.inventory[key].map(itemId => {
+            const item = ALL_PARTS.find(x => x.id === itemId);
+            return `<option value="${item.id}">${item.name}</option>`;
+        }).join('');
+    };
+    fillSelect('c-sel-body', 'bodies');
+    fillSelect('c-sel-eye', 'eyes');
+    fillSelect('c-sel-mouth', 'mouths');
+    updatePreview();
+    openModal('create-modal');
+}
+function updatePreview() {
+    const getImg = (selId) => {
+        const val = document.getElementById(selId).value;
+        const found = ALL_PARTS.find(x => x.id === val);
+        return found ? found.img : "";
+    };
+    document.getElementById('p-body-img').src = getImg('c-sel-body');
+    document.getElementById('p-eye-img').src = getImg('c-sel-eye');
+    document.getElementById('p-mouth-img').src = getImg('c-sel-mouth');
+}
+
+function changeRoomColor() {
+    const wall = prompt("壁の色(例: #fce4ec)", userData.roomConfig.wall);
+    const floor = prompt("床の色(例: #f06292)", userData.roomConfig.floor);
+    if(wall) userData.roomConfig.wall = wall;
+    if(floor) userData.roomConfig.floor = floor;
+    document.documentElement.style.setProperty('--wall-color', userData.roomConfig.wall);
+    document.documentElement.style.setProperty('--floor-color', userData.roomConfig.floor);
+    save();
+}
+
+/** --- 部屋の描画と移動 --- **/
+function refreshRoom() {
+    const room = document.getElementById('room');
+    room.innerHTML = '';
+    userData.roomPets.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'pet';
+        
+        let html = `
+            <img src="${ALL_PARTS.find(x=>x.id===p.bodyId).img}">
+            <img src="${ALL_PARTS.find(x=>x.id===p.eyeId).img}">
+            <img src="${ALL_PARTS.find(x=>x.id===p.mouthId).img}">
+        `;
+
+        if(p.equippedAcc) {
+            p.equippedAcc.forEach(accId => {
+                const acc = MASTER_DATA.accessories.find(a => a.id === accId);
+                if(acc) html += `<img src="${acc.img}">`;
+            });
+        }
+
+        div.innerHTML = html;
+        div.onclick = (e) => { e.stopPropagation(); openDetail(p); };
+        room.appendChild(div);
+        animatePet(div);
+    });
+}
+function animatePet(el) {
+    const walk = () => {
+        if (!el.parentElement) return;
+
+        // 次の移動先を計算
+        const nextX = Math.random() * (window.innerWidth - 100);
+        const nextY = window.innerHeight * 0.6 + Math.random() * (window.innerHeight * 0.2);
+        
+        // 現在の座標を取得
+        const currentX = parseFloat(el.style.left) || 0;
+        
+        // --- 向きの反転処理（ここを改善） ---
+        // 次の地点が今の場所より右なら右向き、左なら左向き
+        const imgs = el.querySelectorAll('img');
+        if (nextX > currentX) {
+            // 右に動くときは反転を解除
+            imgs.forEach(img => img.classList.add('flip-img'));
+        } else {
+            // 左に動くときは即座に反転
+            imgs.forEach(img => img.classList.remove('flip-img'));
+        }
+
+        // 移動速度（距離に応じて時間を変えるとより自然です）
+        const dur = 3000 + Math.random() * 3000;
+
+        // 移動のアニメーション設定
+        el.style.transition = `left ${dur/1000}s linear, top ${dur/1000}s linear`;
+        el.style.left = nextX + 'px';
+        el.style.top = nextY + 'px';
+
+        // 次の移動までの待機時間（移動時間 + 休憩）
+        setTimeout(walk, dur + 1000);
+    };
+
+    // 初回実行時に少し遅らせて開始
+    setTimeout(walk, Math.random() * 1000);
+}
+
+function openDetail(pet) {
+    selectedPetId = pet.id;
+    document.getElementById('det-name').innerText = pet.name;
+    document.getElementById('det-hunger').innerText = pet.hunger;
+    document.getElementById('det-feeling').innerText = pet.feeling;
+    document.getElementById('det-tags').innerText = pet.tags.join(" ");
+    openModal('detail-modal');
+}
+
+/** --- ボックス機能 (改名機能付き) --- **/
+function openBox() {
+    const list = document.getElementById('box-list');
+    list.innerHTML = '';
+    
+    // 部屋にいるペットとボックスにいるペットを統合
+    const all = [
+        ...userData.roomPets.map(p => ({...p, loc:'room'})), 
+        ...userData.boxPets.map(p => ({...p, loc:'box'}))
+    ];
+    
+    all.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.style = "display: flex; align-items: center; gap: 10px; margin-bottom: 8px;";
+        
+        // 名前入力欄（input）の作成
+        item.innerHTML = `
+            <input type="text" value="${p.name}" 
+                style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"
+                onchange="updatePetName(${p.id}, this.value)"
+                placeholder="なまえを入力">
+            <span style="font-size: 0.8em; color: #888;">${p.loc==='room'?'(部屋)':'(箱)'}</span>
+        `;
+        
+        const btn = document.createElement('button');
+        btn.innerText = p.loc === 'room' ? '戻す' : '出す';
+        btn.style = "padding: 5px 10px;";
+        btn.onclick = () => togglePetLoc(p.id, p.loc);
+        
+        item.appendChild(btn);
+        list.appendChild(item);
+    });
+    openModal('box-modal');
+}
+function togglePetLoc(id, current) {
+    if(current === 'box') {
+        if(userData.roomPets.length >= 3) return alert("部屋は3匹までです");
+        const idx = userData.boxPets.findIndex(p => p.id === id);
+        userData.roomPets.push(userData.boxPets.splice(idx, 1)[0]);
+    } else {
+        const idx = userData.roomPets.findIndex(p => p.id === id);
+        userData.boxPets.push(userData.roomPets.splice(idx, 1)[0]);
+    }
+    save(); refreshRoom(); openBox();
+}
+
+/** --- 育成アクション --- **/
+function openFeedSelect() {
+    const list = document.getElementById('food-inventory-list');
+    list.innerHTML = '';
+    let hasFood = false;
+    for(let id in userData.inventory.foods) {
+        if(userData.inventory.foods[id] > 0) {
+            hasFood = true;
+            const food = FOOD_DATA.find(f => f.id === id);
+            const btn = document.createElement('button');
+            btn.style = "width:100%; margin-bottom:5px; padding:10px;";
+            btn.innerText = `${food.name} (残り${userData.inventory.foods[id]}個)`;
+            btn.onclick = () => doFeed(id);
+            list.appendChild(btn);
+        }
+    }
+    if(!hasFood) list.innerHTML = "<p>エサを持っていません。ショップで買ってね！</p>";
+    openModal('feed-select-modal');
+}
+
+/** --- エサやり（即時保存付き） --- **/
+function doFeed(foodId) {
+    const p = userData.roomPets.find(x => x.id === selectedPetId);
+    const food = FOOD_DATA.find(f => f.id === foodId);
+    
+    if (!p) return;
+    if (p.hunger >= 100) {
+        alert("お腹いっぱいです！");
+        return;
+    }
+    
+    // 1. 満腹度をアップ
+    p.hunger = Math.min(100, (p.hunger || 0) + food.recovery);
+    
+    // 2. 在庫を減らす
+    userData.inventory.foods[foodId]--;
+    
+    // 3. 【重要】即座にストレージへ保存
+    userData.lastSaveTime = Date.now(); // 保存時刻も更新
+    localStorage.setItem('maru_v3_ext', JSON.stringify(userData));
+    
+    console.log(`${food.name}をあげました。現在の満腹度: ${p.hunger}`);
+
+    // 4. 表示の更新
+    openDetail(p);      // 詳細画面の数値を更新
+    openFeedSelect();   // エサ選択リストの残り個数を更新
+}
+
+function openEquipMenu() {
+    const p = userData.roomPets.find(x => x.id === selectedPetId);
+    if(!p.equippedAcc) p.equippedAcc = [];
+    
+    const list = document.getElementById('equip-list');
+    list.innerHTML = userData.inventory.accessories.map(accId => {
+        const acc = MASTER_DATA.accessories.find(a => a.id === accId);
+        const isEquipped = p.equippedAcc.includes(accId);
+        return `
+            <div class="list-item">
+                <span>${acc.name}</span>
+                <button onclick="toggleEquip('${accId}')">${isEquipped ? 'はずす' : 'つける'}</button>
+            </div>
+        `;
+    }).join('');
+    openModal('equip-modal');
+}
+
+/** --- アクセサリ着脱（即時保存付き） --- **/
+function toggleEquip(accId) {
+    // 選択中のペットを特定
+    const p = userData.roomPets.find(x => x.id === selectedPetId);
+    if (!p) return;
+    
+    // 配列が壊れていたら直す
+    if (!Array.isArray(p.equippedAcc)) p.equippedAcc = [];
+    
+    const idx = p.equippedAcc.indexOf(accId);
+    if (idx > -1) {
+        p.equippedAcc.splice(idx, 1); // すでに持っていれば外す
+    } else {
+        p.equippedAcc.push(accId);    // 持っていなければ付ける
+    }
+
+    // --- ここで強力に保存 ---
+    userData.lastSaveTime = Date.now();
+    localStorage.setItem('maru_v3_ext', JSON.stringify(userData));
+    
+    // 画面を更新
+    refreshRoom();
+    openEquipMenu(); 
+    console.log(`${p.name} のアクセサリを保存しました:`, p.equippedAcc);
+}
+
+/** --- 移動範囲の調整（地面の比率に合わせる） --- **/
+function animatePet(el) {
+    const walk = () => {
+        if (!el.parentElement) return;
+
+        const currentX = parseFloat(el.style.left) || 0;
+        const nextX = Math.random() * (window.innerWidth - 100);
+        
+const groundTop = window.innerHeight * 0.6;
+        const groundBottom = window.innerHeight * 0.85;
+        const nextY = groundTop + Math.random() * (groundBottom - groundTop);
+        
+        const imgs = el.querySelectorAll('img');
+        if (nextX > currentX) {
+            imgs.forEach(img => img.classList.add('flip-img'));
+        } else {
+            imgs.forEach(img => img.classList.remove('flip-img'));
+        }
+
+        const dur = 3000 + Math.random() * 3000;
+        el.style.transition = `left ${dur/1000}s linear, top ${dur/1000}s linear`;
+        el.style.left = nextX + 'px';
+        el.style.top = nextY + 'px';
+
+        setTimeout(walk, dur + 1000);
+    };
+    setTimeout(walk, Math.random() * 1000);
+}
+
+/** --- refreshRoom の補強（アクセサリ描画） --- **/
+function refreshRoom() {
+    const room = document.getElementById('room');
+    room.innerHTML = ''; 
+    // 所持金表示を再配置（もし消えた場合用）
+    const moneyDisplay = `<div id="money-info" style="position:fixed; top:10px; right:10px; background:white; padding:5px 15px; border-radius:20px; border:2px solid #ff99aa; font-weight:bold; z-index:1000;">💰 <span id="money-display">${userData.money}</span></div>`;
+    room.insertAdjacentHTML('beforeend', moneyDisplay);
+
+    userData.roomPets.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'pet';
+        // 初回配置を地面の上に設定
+        div.style.left = (Math.random() * 80) + '%';
+        div.style.top = (65 + Math.random() * 20) + '%';
+
+        const body = MASTER_DATA.bodies.find(b => b.id === p.bodyId);
+        const eye = MASTER_DATA.eyes.find(e => e.id === p.eyeId);
+        const mouth = MASTER_DATA.mouths.find(m => m.id === p.mouthId);
+
+        let html = `
+            <img src="${body ? body.img : ''}">
+            <img src="${eye ? eye.img : ''}">
+            <img src="${mouth ? mouth.img : ''}">
+        `;
+
+        // アクセサリを確実に描画
+        if (p.equippedAcc) {
+            p.equippedAcc.forEach(accId => {
+                const acc = MASTER_DATA.accessories.find(a => a.id === accId);
+                if (acc) {
+                    html += `<img src="${acc.img}">`;
+                }
+            });
+        }
+
+        div.innerHTML = html;
+        div.onclick = (e) => { e.stopPropagation(); openDetail(p); };
+        room.appendChild(div);
+        animatePet(div);
+    });
+}
+
+/** --- QRコード関連 --- **/
+function generateQR() {
+    const out = document.getElementById('qrcode-output');
+    out.innerHTML = '';
+    const data = `M3:${document.getElementById('c-name').value || 'まる'},${document.getElementById('c-sel-body').value},${document.getElementById('c-sel-eye').value},${document.getElementById('c-sel-mouth').value},${document.getElementById('c-t1').value},${document.getElementById('c-t2').value},${document.getElementById('c-diff').value},${document.getElementById('c-fav').value}`;
+    
+    if (typeof QRCode === "undefined") return alert("ライブラリが準備中...");
+    new QRCode(out, { text: data, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.M });
+}
+
+function scanFile(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            const cvs = document.createElement('canvas');
+            const ctx = cvs.getContext('2d');
+            cvs.width = img.width; cvs.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const qr = jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data, cvs.width, cvs.height);
+            if(qr && qr.data.startsWith("M3:")) {
+                const parts = qr.data.replace("M3:","").split(",");
+                const [name, b, e, m, t1, t2, diff, fav] = parts;
+                const price = parseInt(diff || 1) * 200;
+                
+                document.getElementById('buy-area').style.display = 'block';
+                document.getElementById('buy-info').innerText = `${name}を購入(${price}コイン)`;
+                document.getElementById('buy-btn').onclick = () => {
+                    if(userData.money < price) return alert("コイン不足");
+                    userData.money -= price;
+                }
+            }
+        }
+    }
+}
+            /** --- QRコード生成（極限まで短縮） --- **/
+function generateQR() {
+    const out = document.getElementById('qrcode-output');
+    out.innerHTML = '';
+    
+    // データをカンマ区切りの文字列にまとめる（余計なスペースを削除）
+    const name = document.getElementById('c-name').value || 'まる';
+    const body = document.getElementById('c-sel-body').value;
+    const eye = document.getElementById('c-sel-eye').value;
+    const mouth = document.getElementById('c-sel-mouth').value;
+    const t1 = document.getElementById('c-t1').value || ' ';
+    const t2 = document.getElementById('c-t2').value || ' ';
+    const diff = document.getElementById('c-diff').value;
+    const fav = document.getElementById('c-fav').value;
+
+    // 読み取りミスを減らすため、識別子を短くし、データの順番を厳守
+    const data = `M3:${name},${body},${eye},${mouth},${t1},${t2},${diff},${fav}`;
+    
+    if (typeof QRCode === "undefined") return alert("ライブラリ読込中...");
+
+    try {
+        new QRCode(out, {
+            text: data,
+            width: 150, // 少し大きくして密度を下げる
+            height: 150,
+            // 汚れやボケに強い「レベルH (High)」に設定
+            correctLevel: QRCode.CorrectLevel.H 
+        });
+    } catch (e) {
+        alert("データが長すぎます。名前やタグを短くしてください。");
+    }
+}
+
+/** --- QRコード生成（読み取り率向上版） --- **/
+function generateQR() {
+    const out = document.getElementById('qrcode-output');
+    out.innerHTML = ''; // クリア
+    
+    // データを収集（カンマではなく | で区切ることで誤作動を防止）
+    const name = document.getElementById('c-name').value || 'まる';
+    const body = document.getElementById('c-sel-body').value;
+    const eye = document.getElementById('c-sel-eye').value;
+    const mouth = document.getElementById('c-sel-mouth').value;
+    const t1 = document.getElementById('c-t1').value || ' ';
+    const t2 = document.getElementById('c-t2').value || ' ';
+    const diff = document.getElementById('c-diff').value || '1';
+    const fav = document.getElementById('c-fav').value || 'りんご';
+
+    // 識別子 M3: を含めたデータ文字列
+    const data = `M3:${name}|${body}|${eye}|${mouth}|${t1}|${t2}|${diff}|${fav}`;
+    
+    if (typeof QRCode === "undefined") {
+        alert("ライブラリが読み込まれていません。ネット接続を確認してください。");
+        return;
+    }
+
+    try {
+        // 新しいQRコードの作成
+        new QRCode(out, {
+            text: data,
+            width: 160,
+            height: 160,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H // エラー訂正を最大に
+        });
+    } catch (e) {
+        console.error(e);
+        alert("QR作成エラー。名前やタグを短くしてみてください。");
+    }
+}
+
+/** --- QRコード生成（読み取りやすさ重視） --- **/
+function generateQR() {
+    const out = document.getElementById('qrcode-output');
+    out.innerHTML = '';
+    
+    // データをカンマ区切りで構築
+    const name = document.getElementById('c-name').value || 'まる';
+    const b = document.getElementById('c-sel-body').value;
+    const e = document.getElementById('c-sel-eye').value;
+    const m = document.getElementById('c-sel-mouth').value;
+    const t1 = document.getElementById('c-t1').value || ' ';
+    const t2 = document.getElementById('c-t2').value || ' ';
+    const diff = document.getElementById('c-diff').value;
+    const fav = document.getElementById('c-fav').value;
+
+    // データが多すぎると読み取れないため、短くまとめる
+    const data = `M3:${name},${b},${e},${m},${t1},${t2},${diff},${fav}`;
+    
+    if (typeof QRCode === "undefined") return alert("ライブラリを読み込み中です...");
+
+    try {
+        new QRCode(out, {
+            text: data,
+            width: 160, // 少し大きくする
+            height: 160,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H // 復元レベル最高
+        });
+    } catch (err) {
+        alert("名前やタグが長すぎます。短くしてください。");
+    }
+}
+
+/** --- QRコード生成 (判定をより確実に) --- **/
+function generateQR() {
+    const out = document.getElementById('qrcode-output');
+    out.innerHTML = '';
+    
+    // 入力値を整理
+    const name = (document.getElementById('c-name').value || 'まる').replace(/,/g, ''); // カンマを禁止
+    const b = document.getElementById('c-sel-body').value;
+    const e = document.getElementById('c-sel-eye').value;
+    const m = document.getElementById('c-sel-mouth').value;
+    const t1 = (document.getElementById('c-t1').value || ' ').replace(/,/g, '');
+    const t2 = (document.getElementById('c-t2').value || ' ').replace(/,/g, '');
+    const diff = document.getElementById('c-diff').value;
+    const fav = document.getElementById('c-fav').value;
+
+    // データを作成
+    const data = `M3:${name},${b},${e},${m},${t1},${t2},${diff},${fav}`;
+    
+    if (typeof QRCode === "undefined") return alert("ライブラリが準備中です");
+
+    try {
+        new QRCode(out, {
+            text: data,
+            width: 160,
+            height: 160,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        console.log("QR生成完了:", data);
+    } catch (err) {
+        alert("QR生成エラー: 内容を短くしてください。");
+    }
+}
+
+function scanFile(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const cvs = document.createElement('canvas');
+            const ctx = cvs.getContext('2d');
+            cvs.width = img.width; 
+            cvs.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+            const qr = jsQR(imageData.data, cvs.width, cvs.height, {
+                inversionAttempts: "attemptBoth"
+            });
+
+            if(qr) {
+                const qrContent = qr.data.trim();
+                if(qrContent.indexOf("M3:") === 0) {
+                    const rawStr = qrContent.substring(3);
+                    const parts = rawStr.split(",");
+                    
+                    if(parts.length >= 4) {
+                        const petData = {
+                            name: parts[0],
+                            bodyId: parts[1],
+                            eyeId: parts[2],
+                            mouthId: parts[3],
+                            t1: parts[4] || "",
+                            t2: parts[5] || "",
+                            diff: parseInt(parts[6]) || 1
+                        };
+
+                        const price = petData.diff * 200;
+                        
+                        // --- プレビュー表示の作成 ---
+                        const preview = document.getElementById('buy-preview');
+                        const body = MASTER_DATA.bodies.find(b => b.id === petData.bodyId);
+                        const eye = MASTER_DATA.eyes.find(e => e.id === petData.eyeId);
+                        const mouth = MASTER_DATA.mouths.find(m => m.id === petData.mouthId);
+
+                        // プレビューHTMLを組み立て
+                        preview.innerHTML = `
+                            <img src="${body ? body.img : ''}" style="position:absolute; width:100%; top:0; left:0;">
+                            <img src="${eye ? eye.img : ''}" style="position:absolute; width:100%; top:0; left:0;">
+                            <img src="${mouth ? mouth.img : ''}" style="position:absolute; width:100%; top:0; left:0;">
+                        `;
+
+                        // 詳細情報の表示
+                        document.getElementById('buy-area').style.display = 'block';
+                        document.getElementById('buy-info').innerHTML = `
+                            <div style="font-size:1.1em; color:#ff4785;">${petData.name}</div>
+                            <div style="font-size:0.8em; color:#888; margin-bottom:5px;">
+                                #${petData.t1} #${petData.t2}
+                            </div>
+                            <div>価格: 💰${price} コイン</div>
+                        `;
+                        
+                        // 購入ボタンの処理
+                        document.getElementById('buy-btn').onclick = () => {
+                            if(userData.money < price) return alert("コインが足りません！");
+                            
+                            userData.money -= price;
+                            const newPet = { 
+                                id: Date.now(), 
+                                name: petData.name, 
+                                bodyId: petData.bodyId, 
+                                eyeId: petData.eyeId, 
+                                mouthId: petData.mouthId, 
+                                tags: [petData.t1, petData.t2], 
+                                hunger: 100, 
+                                feeling: 0, 
+                                equippedAcc: [] 
+                            };
+
+                            userData.boxPets.push(newPet);
+                            save();
+                            alert(`${petData.name} を迎えました！ボックスを確認してね。`);
+                            document.getElementById('buy-area').style.display = 'none';
+                            closeAllModals();
+                            refreshRoom();
+                        };
+                    }
+                } else {
+                    alert("これはまるちゃんのQRではありません。");
+                }
+            } else {
+                alert("QRコードが認識できません。");
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+/** --- キモチをお金に換える (送信) --- **/
+function sendFeeling() {
+    // 詳細画面で選択中のペットを取得
+    const p = userData.roomPets.find(x => x.id === selectedPetId);
+    if (!p) return;
+
+    if (!p.feeling || p.feeling <= 0) {
+        alert("まだキモチが貯まっていません。");
+        return;
+    }
+
+    const earnedMoney = Math.floor(p.feeling);
+    
+    // 1. 所持金を加算
+    userData.money += earnedMoney;
+    
+    // 2. ペットのキモチをリセット
+    p.feeling = 0;
+
+    // 3. 重要：この瞬間に localStorage へ強制保存
+    // 5秒ごとの自動保存を待たずに、即座に書き込みます
+    userData.lastSaveTime = Date.now(); // 保存時刻も更新
+    localStorage.setItem('maru_v3_ext', JSON.stringify(userData));
+    
+    alert(`💰 ${earnedMoney}コイン 獲得！\n現在の所持金: ${userData.money}コイン`);
+    
+    // 4. UIの更新
+    refreshRoom(); // 所持金表示を更新
+    openDetail(p); // 詳細画面の数値をリセット
+}
+
+// localStorageからデータを読み込む関数
+function load() {
+    const d = localStorage.getItem('maru_v3_ext');
+    if (d) {
+        userData = JSON.parse(d);
+        
+        // データの欠損を補完（特に feeling が undefined の場合）
+        const allPets = [...userData.roomPets, ...userData.boxPets];
+        allPets.forEach(p => {
+// ここが重要！アクセサリのデータがなければ空の配列を作る
+            if (!p.equippedAcc || !Array.isArray(p.equippedAcc)) {
+                p.equippedAcc = [];
+            }
+            if (p.feeling === undefined) p.feeling = 0;
+            if (p.hunger === undefined) p.hunger = 100;
+        });
+
+        // 部屋の色を適用
+        document.documentElement.style.setProperty('--wall-color', userData.roomConfig.wall);
+        document.documentElement.style.setProperty('--floor-color', userData.roomConfig.floor);
+    }
+}
+
+function calculateProgress(totalMinutes) {
+    const allPets = [...userData.roomPets, ...userData.boxPets];
+    
+    allPets.forEach(p => {
+        // 1. 満腹度の減少 (10分で 1 減る = 1分で 0.1 減る)
+        const oldHunger = p.hunger || 0;
+        const hungerLoss = totalMinutes * 0.1; 
+        p.hunger = Math.max(0, oldHunger - hungerLoss);
+
+        // 2. キモチの上昇 (満腹度が 0 でなければ 1分で 2 増える)
+        // 放置中に満腹度が 0 になるまでの時間を考慮して計算
+        let happyMinutes = 0;
+        if (oldHunger > 0) {
+            // 満腹度が0になるまでの時間(分) = 現在の満腹度 / 0.1
+            const minutesToStarve = oldHunger / 0.1;
+            happyMinutes = Math.min(totalMinutes, minutesToStarve);
+        }
+
+        p.feeling = (p.feeling || 0) + Math.floor(happyMinutes * 2);
+    });
+}
+
+/** --- 名前の変更と保存 --- **/
+function updatePetName(petId, newName) {
+    if (!newName.trim()) return; // 空文字なら無視
+
+    // 部屋とボックス両方から対象のペットを探す
+    let target = userData.roomPets.find(p => p.id === petId);
+    if (!target) {
+        target = userData.boxPets.find(p => p.id === petId);
+    }
+
+    if (target) {
+        target.name = newName;
+        save(); // LocalStorageに即時保存
+        console.log(`名前を ${newName} に変更しました`);
+        
+        // 部屋にいるペットなら、名前の表示（もしあれば）を更新するために再描画
+        refreshRoom(); 
+    }
+}
+window.onload = () => { 
+    load(); 
+    applyOfflineTime(); // 起動時に放置していた分を計算
+    checkLoginBonus();
+    refreshRoom(); 
+    
+    // 5秒ごとに自動セーブ（その際にお腹/キモチも1分単位で計算される）
+    setInterval(save, 5000); 
+
+    // 詳細画面の数値をリアルタイムに（1秒ごとに）書き換える
+    setInterval(() => {
+        if(document.getElementById('detail-modal').classList.contains('modal-open')) {
+            const p = userData.roomPets.find(x => x.id === selectedPetId);
+            if(p) {
+                // 表示用：満腹度は小数点第1位まで、キモチは整数
+                document.getElementById('det-hunger').innerText = (p.hunger || 0).toFixed(1);
+                document.getElementById('det-feeling').innerText = Math.floor(p.feeling || 0);
+            }
+        }
+    }, 1000);
+};
+</script>
+</body>
+</html>
