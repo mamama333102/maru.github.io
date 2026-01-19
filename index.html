@@ -77,6 +77,13 @@
     <h3>エサショップ</h3>
     <p>所持金: <span id="shop-money"></span>枚</p>
     <div id="shop-list"></div>
+    <div id="code-area" style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 15px; border: 2px solid #bcd4ff;">
+    <h3 style="margin: 0 0 10px 0; color: #4a90e2; font-size: 1em;">🎁 あいことばを入力</h3>
+    <div style="display: flex; gap: 5px;">
+        <input type="text" id="code-input" placeholder="ここにワードを入力" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <button onclick="checkGiftCode()" style="background: #4a90e2; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;">送信</button>
+    </div>
+</div>
     <button onclick="closeAllModals()">閉じる</button>
 </div>
 
@@ -144,108 +151,112 @@
 /** --- データ定義 --- **/
 const MASTER_DATA = {
     bodies: [
-        {id:'b1', name:'白まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_b.png'}, // ここをファイル名に
-        {id:'b2', name:'桃まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/pink_b.png'},
-        {id:'b3', name:'黒まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_b.png'},
-        {id:'b4', name:'青まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bule_b.png'},
-{id:'b5', name:'緑まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_b.png'},
-{id:'b6', name:'紫まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_b.png'},
-{id:'b7', name:'赤まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_b.png'},
-{id:'b8', name:'オレンジまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b1.png'},
-{id:'b9', name:'みーまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b2.png'},
-{id:'b10', name:'黄まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b3.png'},
-{id:'b11', name:'ひのまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b4.png'}
+        {id:'b1', name:'白まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_b.png', isLimited: false}, // ここをファイル名に
+        {id:'b2', name:'桃まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/pink_b.png', isLimited: false},
+        {id:'b3', name:'黒まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_b.png', isLimited: false},
+        {id:'b4', name:'青まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bule_b.png', isLimited: false},
+{id:'b5', name:'緑まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_b.png', isLimited: false},
+{id:'b6', name:'紫まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_b.png', isLimited: false},
+{id:'b7', name:'赤まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_b.png', isLimited: false},
+{id:'b8', name:'オレンジまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b1.png', isLimited: false},
+{id:'b9', name:'みーまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b2.png', isLimited: false},
+{id:'b10', name:'黄まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b3.png', isLimited: false},
+{id:'b11', name:'ひのまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b4.png', isLimited: false}
 ],
     eyes: [
-        {id:'e1', name:'ふつうの目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_me.png'},
-        {id:'e2', name:'ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/zitome.png'},
- {id:'e3', name:'a目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a_me.png'},
- {id:'e4', name:'黒い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_me.png'},
- {id:'e5', name:'青い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_me.png'},
- {id:'e6', name:'緑の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_me.png'},
- {id:'e7', name:'逆ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/gyaku_jitome.png'},
- {id:'e8', name:'カイトー目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kaitou.png'},
- {id:'e9', name:'まつ毛つき閉じ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/matuge_tizi.png'},
-  {id:'e10', name:'怒った目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/okoru.png'},
-   {id:'e11', name:'紫の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_me.png'},
- {id:'e12', name:'赤い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_me.png'},
- {id:'e13', name:'猫目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/riaru_me.png'},
- {id:'e14', name:'t目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/t_me.png'},
- {id:'e15', name:'単眼', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/tangan.png'},
- {id:'e16', name:'点', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ten.png'},
- {id:'e17', name:'閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/toziru.png'},
-  {id:'e18', name:'ばってん目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e1.png'},
-   {id:'e19', name:'四角の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e2.png'},
-    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e3.png'}
+        {id:'e1', name:'ふつうの目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_me.png', isLimited: false},
+        {id:'e2', name:'ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/zitome.png', isLimited: false},
+ {id:'e3', name:'a目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a_me.png', isLimited: false},
+ {id:'e4', name:'黒い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_me.png', isLimited: false},
+ {id:'e5', name:'青い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_me.png', isLimited: false},
+ {id:'e6', name:'緑の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_me.png', isLimited: false},
+ {id:'e7', name:'逆ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/gyaku_jitome.png', isLimited: false},
+ {id:'e8', name:'カイトー目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kaitou.png', isLimited: false},
+ {id:'e9', name:'まつ毛つき閉じ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/matuge_tizi.png', isLimited: false},
+  {id:'e10', name:'怒った目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/okoru.png', isLimited: false},
+   {id:'e11', name:'紫の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_me.png', isLimited: false},
+ {id:'e12', name:'赤い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_me.png', isLimited: false},
+ {id:'e13', name:'猫目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/riaru_me.png', isLimited: false},
+ {id:'e14', name:'t目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/t_me.png', isLimited: false},
+ {id:'e15', name:'単眼', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/tangan.png', isLimited: false},
+ {id:'e16', name:'点', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ten.png', isLimited: false},
+ {id:'e17', name:'閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/toziru.png', isLimited: false},
+  {id:'e18', name:'ばってん目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e1.png', isLimited: false},
+   {id:'e19', name:'四角の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e2.png', isLimited: false},
+    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e3.png', isLimited: false}
 ],
     mouths: [
-        {id:'m1', name:'にっこり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_kuti.png'},
- {id:'m2', name:'アヴァ口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ava_kuti.png'},
- {id:'m3', name:'大きな四角', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/big_sikaku_kuti.png'},
- {id:'m4', name:'歯を見せる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ha_kuti.png'},
- {id:'m5', name:'小さな', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kuti_2.png'},
-  {id:'m6', name:'中くらいの', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kuti_3.png'},
- {id:'m7', name:'n口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/n_kuti.png'},
- {id:'m8', name:'サザエ口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/sazae.png'},
- {id:'m9', name:'四角', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/sikaku_kuti.png'},
- {id:'m10', name:'u口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/u_kuti.png'},
- {id:'m11', name:'w口開く', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_hiraku.png'},
- {id:'m12', name:'w口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_kuti.png'},
- {id:'m13', name:'八重歯閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yaeba.png'},
- {id:'m14', name:'m口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m1.png'},
- {id:'m15', name:'鳥の口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m2.png'},
- {id:'m16', name:'3口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m3.png'},
- {id:'m17', name:'ギザギザ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m4.png'},
-  {id:'m18', name:'フムフム', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m5.png'},
-   {id:'m19', name:'タコタコ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m6.png'}
+        {id:'m1', name:'にっこり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_kuti.png', isLimited: false},
+ {id:'m2', name:'アヴァ口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ava_kuti.png', isLimited: false},
+ {id:'m3', name:'大きな四角', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/big_sikaku_kuti.png', isLimited: false},
+ {id:'m4', name:'歯を見せる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ha_kuti.png', isLimited: false},
+ {id:'m5', name:'小さな', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kuti_2.png', isLimited: false},
+  {id:'m6', name:'中くらいの', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kuti_3.png', isLimited: false},
+ {id:'m7', name:'n口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/n_kuti.png', isLimited: false},
+ {id:'m8', name:'サザエ口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/sazae.png', isLimited: false},
+ {id:'m9', name:'四角', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/sikaku_kuti.png', isLimited: false},
+ {id:'m10', name:'u口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/u_kuti.png', isLimited: false},
+ {id:'m11', name:'w口開く', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_hiraku.png', isLimited: false},
+ {id:'m12', name:'w口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_kuti.png', isLimited: false},
+ {id:'m13', name:'八重歯閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yaeba.png', isLimited: false},
+ {id:'m14', name:'m口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m1.png', isLimited: false},
+ {id:'m15', name:'鳥の口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m2.png', isLimited: false},
+ {id:'m16', name:'3口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m3.png', isLimited: false},
+ {id:'m17', name:'ギザギザ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m4.png', isLimited: false},
+  {id:'m18', name:'フムフム', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m5.png', isLimited: false},
+   {id:'m19', name:'タコタコ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m6.png', isLimited: false}
 ],
     accessories: [
-        {id:'a1', name:'黒リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_ri.png'},
-        {id:'a2', name:'青いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_ban.png'},
-        {id:'a3', name:'青リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_ri.png'},
-        {id:'a4', name:'sfゴーグル', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/goggles.png'},
-        {id:'a5', name:'グレーリボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/grade_r.png'},
-        {id:'a6', name:'緑リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_ri.png'},
-        {id:'a7', name:'葉っぱ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/happa.png'},
-        {id:'a8', name:'ひまわり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/himawari.png'},
-        {id:'a9', name:'歴戦の傷', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kizu.png'},
-        {id:'a10', name:'コケ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/koke.png'},
-        {id:'a11', name:'たれ耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/mimi.png'},
-        {id:'a12', name:'桃色のバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/pink_ban.png'},
-        {id:'a13', name:'紫リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_r.png'},
-        {id:'a14', name:'赤いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_ban.png'},
-        {id:'a15', name:'赤い花', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_hana.png'},
-        {id:'a16', name:'赤リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_ri.png'},
-        {id:'a17', name:'雪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/snow.png'},
-        {id:'a18', name:'黄色いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ban.png'},
-        {id:'a19', name:'黄リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ri.png'},
-        {id:'a20', name:'アヴァアクセ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a1.png'},
-        {id:'a21', name:'王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a2.png'},
-        {id:'a22', name:'悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a3.png'},
-        {id:'a23', name:'まるぐるみ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a23.png'},
-        {id:'a24', name:'ねじりはちまき', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a24.png'},
-        {id:'a25', name:'たこ焼きソース', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a25.png'},
-        {id:'a26', name:'ツギハギ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a26.png'},
-        {id:'a27', name:'絆創膏', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a27.png'},
-        {id:'a28', name:'紫の絆創膏', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a28.png'},
-        {id:'a29', name:'カブトのツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a29.png'},
-        {id:'a30', name:'デフォルメ王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a30.png'},
-        {id:'a31', name:'デフォルメ赤い花', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a31.png'},
-        {id:'a32', name:'リボンカチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a32.png'},
-        {id:'a33', name:'カツラ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a33.png'},
-        {id:'a34', name:'白い冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a34.png'},
-        {id:'a35', name:'グラサン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a35.png'},
-        {id:'a36', name:'デフォルメ悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a36.png'},
+        {id:'a1', name:'黒リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_ri.png', isLimited: false},
+        {id:'a2', name:'青いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_ban.png', isLimited: false},
+        {id:'a3', name:'青リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_ri.png', isLimited: false},
+        {id:'a4', name:'sfゴーグル', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/goggles.png', isLimited: false},
+        {id:'a5', name:'グレーリボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/grade_r.png', isLimited: false},
+        {id:'a6', name:'緑リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_ri.png', isLimited: false},
+        {id:'a7', name:'葉っぱ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/happa.png', isLimited: false},
+        {id:'a8', name:'ひまわり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/himawari.png', isLimited: false},
+        {id:'a9', name:'歴戦の傷', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kizu.png', isLimited: false},
+        {id:'a10', name:'コケ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/koke.png', isLimited: false},
+        {id:'a11', name:'たれ耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/mimi.png', isLimited: false},
+        {id:'a12', name:'桃色のバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/pink_ban.png', isLimited: false},
+        {id:'a13', name:'紫リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_r.png', isLimited: false},
+        {id:'a14', name:'赤いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_ban.png', isLimited: false},
+        {id:'a15', name:'赤い花', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_hana.png', isLimited: false},
+        {id:'a16', name:'赤リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_ri.png', isLimited: false},
+        {id:'a17', name:'雪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/snow.png', isLimited: false},
+        {id:'a18', name:'黄色いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ban.png', isLimited: false},
+        {id:'a19', name:'黄リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ri.png', isLimited: false},
+        {id:'a20', name:'アヴァアクセ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a1.png', isLimited: false},
+        {id:'a21', name:'王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a2.png', isLimited: false},
+        {id:'a22', name:'悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a3.png', isLimited: false},
+        {id:'a23', name:'まるぐるみ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a23.png', isLimited: false},
+        {id:'a24', name:'ねじりはちまき', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a24.png', isLimited: false},
+        {id:'a25', name:'たこ焼きソース', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a25.png', isLimited: false},
+        {id:'a26', name:'ツギハギ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a26.png', isLimited: false},
+        {id:'a27', name:'絆創膏', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a27.png', isLimited: false},
+        {id:'a28', name:'紫の絆創膏', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a28.png', isLimited: false},
+        {id:'a29', name:'カブトのツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a29.png', isLimited: false},
+        {id:'a30', name:'デフォルメ王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a30.png', isLimited: false},
+        {id:'a31', name:'デフォルメ赤い花', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a31.png', isLimited: false},
+        {id:'a32', name:'リボンカチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a32.png', isLimited: false},
+        {id:'a33', name:'カツラ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a33.png', isLimited: false},
+        {id:'a34', name:'白い冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a34.png', isLimited: false},
+        {id:'a35', name:'グラサン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a35.png', isLimited: false},
+        {id:'a36', name:'デフォルメ悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a36.png', isLimited: false},
         {id:'a37', name:'天使の輪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a37.png'},
-        {id:'a38', name:'カチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a38.png'},
-        {id:'a39', name:'猫耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a39.png'}
+        {id:'a38', name:'カチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a38.png', isLimited: false},
+        {id:'a39', name:'猫耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a39.png', isLimited: false}
     ]
 };
 
 const FOOD_DATA = [
-    { id: 'f1', name: 'リンゴ', price: 15, recovery: 20 },
-    { id: 'f2', name: '高級ステーキ', price: 30, recovery: 80 },
-    { id: 'f3', name: 'まるパン', price: 15, recovery: 30 }
+    { id: 'f1', name: 'リンゴ', price: 15, recovery: 30 , isLimited: false},
+    { id: 'f2', name: '高級ステーキ', price: 30, recovery: 60 , isLimited: false},
+    { id: 'f3', name: 'まるパン', price: 15, recovery: 30 , isLimited: false},
+  { id: 'f4', name: 'タコタコスナック', price: 0, recovery: 15 , isLimited: true},
+  { id: 'f5', name: 'ペンちゃんチップス', price: 0, recovery: 15 , isLimited: true},
+  { id: 'f6', name: 'バニャニャチップス', price: 0, recovery: 40 , isLimited: true},
+  { id: 'f7', name: '鉛筆', price: 0, recovery: 10 , isLimited: true},
 ];
 
 const ALL_PARTS = [...MASTER_DATA.bodies, ...MASTER_DATA.eyes, ...MASTER_DATA.mouths];
@@ -353,9 +364,16 @@ function openGachaMenu(type) {
 
 function playGacha(type) {
     if(userData.money < 100) return alert("コイン不足");
+
+// ガチャから出るアイテムのプール（限定品を除外）
+    let pool;
+    if (type === 'parts') {
+        pool = ALL_PARTS.filter(p => !p.isLimited);
+    } else {
+        pool = ALL_ACCESSORIES.filter(a => !a.isLimited);
+    }
+
     userData.money -= 100;
-    
-    const pool = (type === 'parts') ? ALL_PARTS : ALL_ACCESSORIES;
     const res = pool[Math.floor(Math.random() * pool.length)];
     let isNew = false;
 
@@ -386,18 +404,31 @@ function playGacha(type) {
     document.getElementById('dust-display').innerText = userData.dustPoints;
     save();
     saveToLocalStorage(); // 最終的に保存
+
+    /* ...既存の処理... */
+    userData.money += earnedMoney;
+    
+    checkAllTitleConditions(); // ★追加：お金が増えたのでチェック
+    saveToLocalStorage();
 }
 
-/** --- ショップ機能 --- **/
+/** --- ショップ機能 (非売品除外版) --- **/
 function openShop() {
-    document.getElementById('shop-money').innerText = userData.money;
+    const moneyDisp = document.getElementById('shop-money');
+    if (moneyDisp) moneyDisp.innerText = userData.money;
+
     const list = document.getElementById('shop-list');
-    list.innerHTML = FOOD_DATA.map(f => `
-        <div class="list-item">
+    
+    // 価格が 0 より大きい、かつ非売品フラグ（isLimited）がついていないものだけを表示
+    const saleItems = FOOD_DATA.filter(f => f.price > 0 && !f.isLimited);
+
+    list.innerHTML = saleItems.map(f => `
+        <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span>${f.name} (${f.price}枚)</span>
-            <button onclick="buyFood('${f.id}')">購入</button>
+            <button onclick="buyFood('${f.id}')" style="padding: 5px 10px; cursor: pointer;">購入</button>
         </div>
     `).join('');
+
     openModal('shop-modal');
 }
 
@@ -659,6 +690,7 @@ function doFeed(foodId) {
     // 4. 表示の更新
     openDetail(p);      // 詳細画面の数値を更新
     openFeedSelect();   // エサ選択リストの残り個数を更新
+
 }
 
 function openEquipMenu() {
@@ -1121,7 +1153,15 @@ function load() {
     const d = localStorage.getItem('maru_v3_ext');
     if (d) {
         userData = JSON.parse(d);
-        
+
+        // 使用済みコードの保存場所がない場合は作成
+        if (!userData.usedCodes) userData.usedCodes = [];
+        // インベントリの各項目がなければ作成
+        if (!userData.inventory) userData.inventory = { foods: {}, accessories: [] };
+        if (!userData.inventory.accessories) userData.inventory.accessories = [];
+
+if (userData.feedCount === undefined) userData.feedCount = 0;
+
         // データの欠損を補完（特に feeling が undefined の場合）
         const allPets = [...userData.roomPets, ...userData.boxPets];
         allPets.forEach(p => {
@@ -1132,6 +1172,9 @@ function load() {
             if (p.feeling === undefined) p.feeling = 0;
             if (p.hunger === undefined) p.hunger = 100;
         });
+
+// load関数内に追記
+if (!userData.usedCodes) userData.usedCodes = [];
 
         // 部屋の色を適用
         document.documentElement.style.setProperty('--wall-color', userData.roomConfig.wall);
@@ -1202,6 +1245,94 @@ window.onload = () => {
         }
     }, 1000);
 };
+
+function checkGiftCode() {
+    const input = document.getElementById('code-input');
+    const code = input.value.trim();
+    if (!code) return;
+
+    // 1. 重複チェック
+    if (userData.usedCodes.includes(code)) {
+        alert("その合言葉はすでに使用済みです！");
+        input.value = '';
+        return;
+    }
+
+    let rewardMsg = "";
+    let valid = false;
+
+    // --- 合言葉判定リスト ---
+
+    if (code === "これはテストデータです") {
+        // 特定のアクセサリID（例：'crown'）を直接追加
+        // MASTER_DATAに存在するIDであることを確認してください
+        const accId = 'crown'; 
+        userData.inventory.accessories.push(accId);
+        rewardMsg = "🎉 特別なアクセサリ【王冠】を獲得しました！";
+        valid = true;
+    } 
+    else if (code === "目指すはモデル！") {
+        // 合言葉でしか手に入らない特別なエサID（例：'f_special'）
+        // FOOD_DATAにこのIDのデータを追加しておけば機能します
+        const foodId = 'f5';
+        userData.inventory.foods[foodId] = (userData.inventory.foods[foodId] || 0) + 5;
+        rewardMsg = "🎉 非売品エサ【ペンちゃんチップス】を獲得しました！";
+        valid = true;
+    }
+    else if (code === "まるちゃんスタート") {
+        userData.money += 777;
+        userData.inventory.foods["f1"] = (userData.inventory.foods["f1"] || 0) + 5;
+        rewardMsg = "🎉 スターターセット（1000コイン＋エサ5個）を獲得！";
+        valid = true;
+    }
+    else if (code === "うにょー") {
+        // 合言葉でしか手に入らない特別なエサID（例：'f_special'）
+        // FOOD_DATAにこのIDのデータを追加しておけば機能します
+        const foodId = 'f4';
+        userData.inventory.foods[foodId] = (userData.inventory.foods[foodId] || 0) + 5;
+        rewardMsg = "🎉 非売品エサ【タコタコスナック】を獲得しました！";
+        valid = true;
+    }
+        else if (code === "バカヤロー！！") {
+        // 合言葉でしか手に入らない特別なエサID（例：'f_special'）
+        // FOOD_DATAにこのIDのデータを追加しておけば機能します
+        const foodId = 'f7';
+        userData.inventory.foods[foodId] = (userData.inventory.foods[foodId] || 0) + 10;
+        rewardMsg = "🎉 非売品エサ【鉛筆】を獲得しました！";
+        valid = true;
+    }
+            else if (code === "オレンヒーとどうぞ") {
+        // 合言葉でしか手に入らない特別なエサID（例：'f_special'）
+        // FOOD_DATAにこのIDのデータを追加しておけば機能します
+        const foodId = 'f6';
+        userData.inventory.foods[foodId] = (userData.inventory.foods[foodId] || 0) + 5;
+        rewardMsg = "🎉 非売品エサ【バニャニャチップス】を獲得しました！";
+        valid = true;
+    }
+
+    // --- 判定後の処理 ---
+
+    if (valid) {
+        // 使用済みリストに追加
+        userData.usedCodes.push(code);
+        
+        // 【重要】不具合対策：確実に保存を実行
+        saveToLocalStorage(); 
+        
+        alert(rewardMsg);
+        input.value = ''; // 入力をクリア
+        
+userData.usedCodes.push(code);
+        
+        checkAllTitleConditions(); // ★追加：合言葉履歴が増えたのでチェック
+        saveToLocalStorage();
+
+        // 画面の再描画
+        if (typeof refreshRoom === 'function') refreshRoom();
+    } else {
+        alert("合言葉が正しくありません。");
+    }
+}
 
 /** --- データの強制保存 (GitHub/リロード対策) --- **/
 function saveToLocalStorage() {
