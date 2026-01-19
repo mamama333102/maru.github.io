@@ -971,6 +971,7 @@ function scanFile(input) {
 
                             userData.boxPets.push(newPet);
                             save();
+                                saveToLocalStorage();
                             alert(`${petData.name} を迎えました！ボックスを確認してね。`);
                             document.getElementById('buy-area').style.display = 'none';
                             closeAllModals();
@@ -1078,6 +1079,7 @@ function updatePetName(petId, newName) {
     if (target) {
         target.name = newName;
         save(); // LocalStorageに即時保存
+        saveToLocalStorage();
         console.log(`名前を ${newName} に変更しました`);
         
         // 部屋にいるペットなら、名前の表示（もしあれば）を更新するために再描画
