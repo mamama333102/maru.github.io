@@ -745,13 +745,48 @@ function scanFile(input) {
                 document.getElementById('buy-area').style.display = 'block';
                 document.getElementById('buy-info').innerText = `${name}を購入(${price}コイン)`;
                 document.getElementById('buy-btn').onclick = () => {
-                    if(userData.money < price) return alert("コイン不足");
-                    userData.money -= price;
-                }
+    const price = petData.diff * 500;
+
+    if (userData.money < price) {
+        alert("コインが足りません！");
+        return;
+    }
+
+    // 1. お金を減らす
+    userData.money -= price;
+
+    // 2. 新しいペットを作成してボックス（または部屋）に追加
+    const newPet = { 
+        id: Date.now(), 
+        name: petData.name, 
+        bodyId: petData.bodyId, 
+        eyeId: petData.eyeId, 
+        mouthId: petData.mouthId, 
+        tags: [petData.t1, petData.t2], 
+        hunger: 100, 
+        feeling: 0, 
+        equippedAcc: [] 
+    };
+}
+            }
+    
+    // userDataの適切な場所に追加
+    userData.boxPets.push(newPet);
+
+    // 3. 【重要】即座にストレージへ保存
+    // これを忘れると、リロードしたときにお金だけ減ったりペットが消えたりします
+    saveToLocalStorage(); 
+
+    alert(`${petData.name} を迎えました！ボックスを確認してね。`);
+    
+    // 4. UIの更新
+    document.getElementById('buy-area').style.display = 'none';
+    closeAllModals();
+    refreshRoom(); // 所持金表示などを更新
             }
         }
-    }
-}
+    };
+
             /** --- QRコード生成（極限まで短縮） --- **/
 function generateQR() {
     const out = document.getElementById('qrcode-output');
@@ -971,7 +1006,7 @@ function scanFile(input) {
 
                             userData.boxPets.push(newPet);
                             save();
-                                saveToLocalStorage();
+                            saveToLocalStorage();
                             alert(`${petData.name} を迎えました！ボックスを確認してね。`);
                             document.getElementById('buy-area').style.display = 'none';
                             closeAllModals();
