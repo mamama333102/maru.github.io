@@ -221,8 +221,24 @@ const MASTER_DATA = {
         {id:'a19', name:'黄リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ri.png'},
         {id:'a20', name:'アヴァアクセ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a1.png'},
         {id:'a21', name:'王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a2.png'},
-        {id:'a22', name:'悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a3.png'}
-        
+        {id:'a22', name:'悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a3.png'},
+        {id:'a23', name:'まるぐるみ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a23.png'},
+        {id:'a24', name:'ねじりはちまき', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a24.png'},
+        {id:'a25', name:'たこ焼きソース', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a25.png'},
+        {id:'a26', name:'ツギハギ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a26.png'},
+        {id:'a27', name:'絆創膏', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a27.png'},
+        {id:'a28', name:'紫の絆創膏', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a28.png'},
+        {id:'a29', name:'カブトのツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a29.png'},
+        {id:'a30', name:'デフォルメ王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a30.png'},
+        {id:'a31', name:'デフォルメ赤い花', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a31.png'},
+        {id:'a32', name:'リボンカチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a32.png'},
+        {id:'a33', name:'カツラ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a33.png'},
+        {id:'a34', name:'白い冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a34.png'},
+        {id:'a35', name:'グラサン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a35.png'},
+        {id:'a36', name:'デフォルメ悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a36.png'},
+        {id:'a37', name:'天使の輪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a37.png'},
+        {id:'a38', name:'カチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a38.png'},
+        {id:'a39', name:'猫耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a39.png'}
     ]
 };
 
@@ -506,12 +522,12 @@ function openDetail(pet) {
     openModal('detail-modal');
 }
 
-/** --- ボックス機能 (改名機能付き) --- **/
+/** --- ボックス画面 (アイコン表示＆改名＆出し入れ) --- **/
 function openBox() {
     const list = document.getElementById('box-list');
     list.innerHTML = '';
     
-    // 部屋にいるペットとボックスにいるペットを統合
+    // 部屋とボックスのペットを統合
     const all = [
         ...userData.roomPets.map(p => ({...p, loc:'room'})), 
         ...userData.boxPets.map(p => ({...p, loc:'box'}))
@@ -520,20 +536,46 @@ function openBox() {
     all.forEach(p => {
         const item = document.createElement('div');
         item.className = 'list-item';
-        item.style = "display: flex; align-items: center; gap: 10px; margin-bottom: 8px;";
+        item.style = "display: flex; align-items: center; gap: 12px; margin-bottom: 12px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px;";
         
-        // 名前入力欄（input）の作成
+        // --- プレビューアイコンの作成 ---
+        const bodyImg = MASTER_DATA.bodies.find(b => b.id === p.bodyId)?.img || '';
+        const eyeImg = MASTER_DATA.eyes.find(e => e.id === p.eyeId)?.img || '';
+        const mouthImg = MASTER_DATA.mouths.find(m => m.id === p.mouthId)?.img || '';
+        
+        // アクセサリのHTMLを生成
+        let accHtml = '';
+        if (p.equippedAcc) {
+            p.equippedAcc.forEach(accId => {
+                const acc = MASTER_DATA.accessories.find(a => a.id === accId);
+                if (acc) accHtml += `<img src="${acc.img}" style="position:absolute; width:100%; top:0; left:0;">`;
+            });
+        }
+
+        // アイコン部分のHTML（40pxサイズの小さなプレビュー）
+        const iconHtml = `
+            <div style="width:45px; height:45px; position:relative; background:#eee; border-radius:8px; overflow:hidden; flex-shrink:0;">
+                <img src="${bodyImg}" style="position:absolute; width:100%; top:0; left:0;">
+                <img src="${eyeImg}" style="position:absolute; width:100%; top:0; left:0;">
+                <img src="${mouthImg}" style="position:absolute; width:100%; top:0; left:0;">
+                ${accHtml}
+            </div>
+        `;
+
+        // 全体の組み立て
         item.innerHTML = `
-            <input type="text" value="${p.name}" 
-                style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"
-                onchange="updatePetName(${p.id}, this.value)"
-                placeholder="なまえを入力">
-            <span style="font-size: 0.8em; color: #888;">${p.loc==='room'?'(部屋)':'(箱)'}</span>
+            ${iconHtml}
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                <input type="text" value="${p.name}" 
+                    style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;"
+                    onchange="updatePetName(${p.id}, this.value)">
+                <span style="font-size: 0.75em; color: #999;">状態: ${p.loc==='room'?'お部屋':'ボックス'} / 満腹: ${Math.floor(p.hunger)}%</span>
+            </div>
         `;
         
         const btn = document.createElement('button');
         btn.innerText = p.loc === 'room' ? '戻す' : '出す';
-        btn.style = "padding: 5px 10px;";
+        btn.style = "padding: 6px 12px; cursor: pointer; background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8em;";
         btn.onclick = () => togglePetLoc(p.id, p.loc);
         
         item.appendChild(btn);
@@ -541,16 +583,34 @@ function openBox() {
     });
     openModal('box-modal');
 }
-function togglePetLoc(id, current) {
-    if(current === 'box') {
-        if(userData.roomPets.length >= 3) return alert("部屋は3匹までです");
-        const idx = userData.boxPets.findIndex(p => p.id === id);
-        userData.roomPets.push(userData.boxPets.splice(idx, 1)[0]);
+/** --- ペットの場所を移動 (部屋 ⇔ ボックス) --- **/
+function togglePetLoc(petId, currentLoc) {
+    if (currentLoc === 'room') {
+        // 【部屋 → ボックス】
+        const idx = userData.roomPets.findIndex(p => p.id === petId);
+        if (idx > -1) {
+            const pet = userData.roomPets.splice(idx, 1)[0]; // 部屋から抜く
+            userData.boxPets.push(pet); // ボックスに入れる
+        }
     } else {
-        const idx = userData.roomPets.findIndex(p => p.id === id);
-        userData.boxPets.push(userData.roomPets.splice(idx, 1)[0]);
+        // 【ボックス → 部屋】
+        // 部屋がいっぱい（例：5匹まで）なら制限をかけることも可能
+        if (userData.roomPets.length >= 3) {
+            alert("部屋がまるちゃんでいっぱいです！(最大3匹)");
+            return;
+        }
+        
+        const idx = userData.boxPets.findIndex(p => p.id === petId);
+        if (idx > -1) {
+            const pet = userData.boxPets.splice(idx, 1)[0]; // ボックスから抜く
+            userData.roomPets.push(pet); // 部屋に出す
+        }
     }
-    save(); refreshRoom(); openBox();
+
+    // 保存と更新
+    saveToLocalStorage(); 
+    refreshRoom(); // 部屋の表示を更新
+    openBox();     // ボックス画面を再描画（リストを更新するため）
 }
 
 /** --- 育成アクション --- **/
@@ -1080,7 +1140,7 @@ function load() {
 }
 
 function calculateProgress(totalMinutes) {
-    const allPets = [...userData.roomPets, ...userData.boxPets];
+    const allPets = [...userData.roomPets];
     
     allPets.forEach(p => {
         // 1. 満腹度の減少 (10分で 1 減る = 1分で 0.1 減る)
