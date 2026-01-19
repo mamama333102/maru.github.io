@@ -69,7 +69,7 @@
     <h3 id="gacha-title">ガチャ</h3>
     <p>所持: <span id="money-display"></span>枚 / ダブリ: <span id="dust-display"></span>pt</p>
     <div id="gacha-result-area" style="font-weight:bold; color:#f06292; margin:10px 0; min-height:1.2em;"></div>
-    <button id="gacha-exec-btn">ガチャを回す (150枚)</button>
+    <button id="gacha-exec-btn">ガチャを回す (100枚)</button>
     <button onclick="closeAllModals()">戻る</button>
 </div>
 
@@ -106,7 +106,7 @@
     タグ1: <input type="text" id="c-t1" placeholder="げんき" size="6">
     タグ2: <input type="text" id="c-t2" placeholder="くいしんぼう" size="6"><br>
     難度: <select id="c-diff"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-    好物: <select id="c-fav"><option value="りんご">りんご</option><option value="パン">パン</option></select><br>
+    好物: <select id="c-fav"><option value="高級ステーキ">高級ステーキ</option><option value="パン">パン</option></select><br>
     <hr>
     <button onclick="generateQR()">QR発行(販売)</button>
     <div id="qrcode-output"></div>
@@ -149,9 +149,13 @@ const MASTER_DATA = {
         {id:'b3', name:'黒まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_b.png'},
         {id:'b4', name:'青まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bule_b.png'},
 {id:'b5', name:'緑まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_b.png'},
-{id:'b6', name:'桃まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_b.png'},
-{id:'b7', name:'赤まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_b.png'}
-    ],
+{id:'b6', name:'紫まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/purple_b.png'},
+{id:'b7', name:'赤まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/red_b.png'},
+{id:'b8', name:'オレンジまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b1.png'},
+{id:'b9', name:'みーまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b2.png'},
+{id:'b10', name:'黄まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b3.png'},
+{id:'b11', name:'ひのまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b4.png'}
+],
     eyes: [
         {id:'e1', name:'ふつうの目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_me.png'},
         {id:'e2', name:'ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/zitome.png'},
@@ -159,7 +163,7 @@ const MASTER_DATA = {
  {id:'e4', name:'黒い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_me.png'},
  {id:'e5', name:'青い目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/blue_me.png'},
  {id:'e6', name:'緑の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/green_me.png'},
- {id:'e7', name:'逆ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/gyaku_jitome_me.png'},
+ {id:'e7', name:'逆ジト目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/gyaku_jitome.png'},
  {id:'e8', name:'カイトー目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/kaitou.png'},
  {id:'e9', name:'まつ毛つき閉じ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/matuge_tizi.png'},
   {id:'e10', name:'怒った目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/okoru.png'},
@@ -169,7 +173,10 @@ const MASTER_DATA = {
  {id:'e14', name:'t目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/t_me.png'},
  {id:'e15', name:'単眼', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/tangan.png'},
  {id:'e16', name:'点', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/ten.png'},
- {id:'e17', name:'閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/toziru.png'}
+ {id:'e17', name:'閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/toziru.png'},
+  {id:'e18', name:'ばってん目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e1.png'},
+   {id:'e19', name:'四角の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e2.png'},
+    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e3.png'}
 ],
     mouths: [
         {id:'m1', name:'にっこり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_kuti.png'},
@@ -184,7 +191,13 @@ const MASTER_DATA = {
  {id:'m10', name:'u口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/u_kuti.png'},
  {id:'m11', name:'w口開く', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_hiraku.png'},
  {id:'m12', name:'w口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/w_kuti.png'},
- {id:'m13', name:'八重歯閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yaeba.png'}
+ {id:'m13', name:'八重歯閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yaeba.png'},
+ {id:'m14', name:'m口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m1.png'},
+ {id:'m15', name:'鳥の口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m2.png'},
+ {id:'m16', name:'3口', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m3.png'},
+ {id:'m17', name:'ギザギザ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m4.png'},
+  {id:'m18', name:'フムフム', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m5.png'},
+   {id:'m19', name:'タコタコ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/m6.png'}
 ],
     accessories: [
         {id:'a1', name:'黒リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/black_ri.png'},
@@ -206,6 +219,10 @@ const MASTER_DATA = {
         {id:'a17', name:'雪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/snow.png'},
         {id:'a18', name:'黄色いバンダナ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ban.png'},
         {id:'a19', name:'黄リボン', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yellow_ri.png'},
+        {id:'a20', name:'アヴァアクセ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a1.png'},
+        {id:'a21', name:'王冠', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a2.png'},
+        {id:'a22', name:'悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a3.png'}
+        
     ]
 };
 
@@ -283,6 +300,7 @@ function checkLoginBonus() {
         userData.lastLogin = today;
         alert("ログインボーナス！600コイン獲得！");
         save();
+        saveToLocalStorage(); // 最終的に保存
     }
 }
 
@@ -351,6 +369,7 @@ function playGacha(type) {
     document.getElementById('money-display').innerText = userData.money;
     document.getElementById('dust-display').innerText = userData.dustPoints;
     save();
+    saveToLocalStorage(); // 最終的に保存
 }
 
 /** --- ショップ機能 --- **/
@@ -373,6 +392,7 @@ function buyFood(id) {
     userData.inventory.foods[id] = (userData.inventory.foods[id] || 0) + 1;
     document.getElementById('shop-money').innerText = userData.money;
     save();
+    saveToLocalStorage(); // 最終的に保存
 }
 
 /** --- デザイン設定 --- **/
@@ -409,6 +429,7 @@ function changeRoomColor() {
     document.documentElement.style.setProperty('--wall-color', userData.roomConfig.wall);
     document.documentElement.style.setProperty('--floor-color', userData.roomConfig.floor);
     save();
+    saveToLocalStorage();
 }
 
 /** --- 部屋の描画と移動 --- **/
@@ -777,7 +798,7 @@ function generateQR() {
     const t1 = document.getElementById('c-t1').value || ' ';
     const t2 = document.getElementById('c-t2').value || ' ';
     const diff = document.getElementById('c-diff').value || '1';
-    const fav = document.getElementById('c-fav').value || 'りんご';
+    const fav = document.getElementById('c-fav').value || '高級ステーキ';
 
     // 識別子 M3: を含めたデータ文字列
     const data = `M3:${name}|${body}|${eye}|${mouth}|${t1}|${t2}|${diff}|${fav}`;
@@ -1084,6 +1105,22 @@ window.onload = () => {
         }
     }, 1000);
 };
+
+/** --- データの強制保存 (GitHub/リロード対策) --- **/
+function saveToLocalStorage() {
+    // 保存直前に時刻を更新（放置時間の計算がズレないように）
+    userData.lastSaveTime = Date.now();
+    
+    // 文字列にして保存
+    const json = JSON.stringify(userData);
+    localStorage.setItem('maru_v3_ext', json);
+    
+    // 画面の所持金表示を更新
+    const moneyDisp = document.getElementById('money-display');
+    if (moneyDisp) moneyDisp.innerText = userData.money;
+    
+    console.log("データを保存しました:", userData);
+}
 </script>
 </body>
 </html>
