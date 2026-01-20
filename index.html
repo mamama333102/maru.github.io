@@ -161,7 +161,10 @@ const MASTER_DATA = {
 {id:'b8', name:'オレンジまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b1.png', isLimited: false},
 {id:'b9', name:'みーまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b2.png', isLimited: false},
 {id:'b10', name:'黄まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b3.png', isLimited: false},
-{id:'b11', name:'ひのまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b4.png', isLimited: false}
+{id:'b11', name:'ひのまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/b4.png', isLimited: false},
+{id:'b12', name:'青油彩まる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bb1.png', isLimited: false},
+{id:'b13', name:'ネオンペンまる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bb2.png', isLimited: false},
+{id:'b14', name:'ウッドボール', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/bb3.png', isLimited: false}
 ],
     eyes: [
         {id:'e1', name:'ふつうの目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_me.png', isLimited: false},
@@ -183,7 +186,9 @@ const MASTER_DATA = {
  {id:'e17', name:'閉じる', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/toziru.png', isLimited: false},
   {id:'e18', name:'ばってん目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e1.png', isLimited: false},
    {id:'e19', name:'四角の目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e2.png', isLimited: false},
-    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e3.png', isLimited: false}
+    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/e3.png', isLimited: false},
+    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yy1.png', isLimited: false},
+    {id:'e20', name:'ばつ目', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/yy2.png', isLimited: false}
 ],
     mouths: [
         {id:'m1', name:'にっこり', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/syoki_kuti.png', isLimited: false},
@@ -245,7 +250,12 @@ const MASTER_DATA = {
         {id:'a36', name:'デフォルメ悪魔のツノ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a36.png', isLimited: false},
         {id:'a37', name:'天使の輪', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a37.png'},
         {id:'a38', name:'カチューシャ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a38.png', isLimited: false},
-        {id:'a39', name:'猫耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a39.png', isLimited: false}
+        {id:'a39', name:'白の猫耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a39.png', isLimited: false},
+        {id:'a40', name:'黒の猫耳', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a40.png', isLimited: false},
+        {id:'a41', name:'カプセル', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a41.png', isLimited: false},
+        {id:'a42', name:'sfな中身・茶', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a42.png', isLimited: false},
+        {id:'a43', name:'sfな中身・灰', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a43.png', isLimited: false},
+        {id:'a44', name:'テンチョ', img:'https://raw.githubusercontent.com/mamama333102/maru_deta_item/main/a44.png', isLimited: true}
     ]
 };
 
@@ -1263,12 +1273,12 @@ function checkGiftCode() {
 
     // --- 合言葉判定リスト ---
 
-    if (code === "これはテストデータです") {
+    if (code === "ネジ食べるかい") {
         // 特定のアクセサリID（例：'crown'）を直接追加
         // MASTER_DATAに存在するIDであることを確認してください
-        const accId = 'crown'; 
+        const accId = 'a44'; 
         userData.inventory.accessories.push(accId);
-        rewardMsg = "🎉 特別なアクセサリ【王冠】を獲得しました！";
+        rewardMsg = "🎉 特別なアクセサリ【テンチョ】を獲得しました！";
         valid = true;
     } 
     else if (code === "目指すはモデル！") {
